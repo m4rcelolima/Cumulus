@@ -116,11 +116,9 @@ async def on_message(message):
 
                 generatefrom = ''
                 print("Reading messages...")
-                one_percent = max_messages/100
                 message_counter = 0;
                 async for log in client.logs_from(message.channel, limit=max_messages):
                     message_counter+=1;
-                    #if message_counter % one_percent == 0:
                     progressbar.progress(message_counter, max_messages)
                     generatefrom = generatefrom + ' ' + log.content
                 print("")
