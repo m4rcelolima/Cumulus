@@ -3,6 +3,13 @@ import discord
 import random
 import os
 import colors
+import progressbar
+
+
+max_messages = 1000
+image_width = 1920
+image_height = 1080
+
 
 client = discord.Client()
 
@@ -16,7 +23,7 @@ def make_cloud(text, font, hues):
     global currenthues
     currenthues = hues
     words = clean_words(text)
-    wordcloud = WordCloud(font_path=get_random_font(font), background_color='black', width=640, height=360, scale=1, color_func=generate_color)
+    wordcloud = WordCloud(font_path=get_random_font(font), background_color='black', width=image_width, height=image_height, scale=1, color_func=generate_color)
     wordcloud.generate(' '.join(words))
     wordcloud.to_file(output)
 
@@ -33,6 +40,8 @@ def clean_words(text):
     clean = to_words(text)
     for boring in boringwords:
         clean[:] = [word for word in clean if word != boring]
+    clean = [x for x in clean if ':' not in x]
+    clean = [x for x in clean if '@' not in x]
     return clean
 
 
@@ -56,9 +65,9 @@ def format_colors():
     return validcolors
 
 
-@client.event
-async def on_ready():
-    await client.change_presence(game=discord.Game(name='!wordcloud'))
+#@client.event
+#async def on_ready():
+#    await client.change_presence(game=discord.Game(name='!wordcloud'))
 
 
 @client.event
@@ -106,14 +115,23 @@ async def on_message(message):
                     hues.append(random.choice(colors.all).hue)
 
                 generatefrom = ''
-                async for log in client.logs_from(message.channel, limit=1000):
+                print("Reading messages...")
+                one_percent = max_messages/100
+                message_counter = 0;
+                async for log in client.logs_from(message.channel, limit=max_messages):
+                    message_counter+=1;
+                    #if message_counter % one_percent == 0:
+                    progressbar.progress(message_counter, max_messages)
                     generatefrom = generatefrom + ' ' + log.content
+                print("")
+                print("Generating cloud...")
                 make_cloud(generatefrom, font, hues)
-
                 await client.send_file(message.channel, output)
                 await client.delete_message(generating)
 
                 os.remove(output)
 
+                print("All done, standing by...")
 
+print("Waiting command...")
 client.run(token.read())
